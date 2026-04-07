@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -17,11 +17,56 @@ const otpSchema = z.object({
   otp: z.string().length(6, 'OTP must be 6 digits'),
 });
 
+function makePuzzle() {
+  const first = Math.floor(Math.random() * 9) + 1;
+  const second = Math.floor(Math.random() * 9) + 1;
+  return {
+    question: `${first} + ${second}`,
+    answer: first + second,
+  };
+}
+
+function formatCountdown(ms) {
+  const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
 export default function Login() {
   const navigate = useNavigate();
   const { login, sendOTP, verifyOTP, resetOTPState } = useAuthStore();
   const [step, setStep] = useState('credentials');
   const [email, setEmail] = useState('');
+  const [puzzle, setPuzzle] = useState(() => makePuzzle());
+  const [puzzleInput, setPuzzleInput] = useState('');
+  const [lockoutUntil, setLockoutUntil] = useState(null);
+  const [remainingLockTime, setRemainingLockTime] = useState('');
+
+  useEffect(() => {
+    if (!lockoutUntil) {
+      setRemainingLockTime('');
+      return;
+    }
+
+    const updateTime = () => {
+      const remaining = lockoutUntil - Date.now();
+      if (remaining <= 0) {
+        setLockoutUntil(null);
+        setRemainingLockTime('');
+        return;
+      }
+
+      setRemainingLockTime(formatCountdown(remaining));
+    };
+
+    updateTime();
+    const timer = setInterval(updateTime, 1000);
+
+    return () => clearInterval(timer);
+  }, [lockoutUntil]);
 
   const {
     register: registerLogin,
@@ -47,13 +92,32 @@ export default function Login() {
   });
 
   const onLoginSubmit = (values) => {
+    if (lockoutUntil && lockoutUntil > Date.now()) {
+      toast.error(`Account is suspended. Try again in ${remainingLockTime}`);
+      return;
+    }
+
+    if (Number(puzzleInput) !== puzzle.answer) {
+      toast.error('Human verification failed. Solve the puzzle correctly.');
+      setPuzzle(makePuzzle());
+      setPuzzleInput('');
+      return;
+    }
+
     const sanitized = sanitizePayload(values);
     const result = login(sanitized);
 
     if (!result.ok) {
       toast.error(result.message);
+      if (result.lockedUntil) {
+        setLockoutUntil(result.lockedUntil);
+      }
+      setPuzzle(makePuzzle());
+      setPuzzleInput('');
       return;
     }
+
+    setLockoutUntil(null);
 
     setEmail(values.email);
     const otpResult = sendOTP(values.email);
@@ -124,11 +188,35 @@ export default function Login() {
               {loginErrors.password && <p className="text-xs text-red-600 mt-1">{loginErrors.password.message}</p>}
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Human Verification</label>
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 min-w-24 text-center">
+                  {puzzle.question} = ?
+                </div>
+                <input
+                  type="number"
+                  value={puzzleInput}
+                  onChange={(e) => setPuzzleInput(e.target.value)}
+                  placeholder="Answer"
+                  className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <p className="text-xs text-slate-500 mt-1">Solve this puzzle to continue.</p>
+            </div>
+
+            {remainingLockTime && (
+              <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                Account suspended. Try again in {remainingLockTime}
+              </div>
+            )}
+
             <button
               type="submit"
+              disabled={Boolean(remainingLockTime)}
               className="w-full rounded-lg bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
             >
-              Continue
+              {remainingLockTime ? `Locked (${remainingLockTime})` : 'Continue'}
             </button>
           </form>
         ) : (

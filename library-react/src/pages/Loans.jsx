@@ -10,18 +10,30 @@ export default function Loans() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const loans = useLibraryStore((state) => state.loans);
+  const members = useLibraryStore((state) => state.members);
   const returnBook = useLibraryStore((state) => state.returnBook);
   const user = useAuthStore((state) => state.user);
 
-  const filteredLoans = loans.filter(loan => {
-    const isAdmin = user?.role === 'admin' || user?.role === 'librarian';
-    const isOwnLoan = loan.member.toLowerCase() === user?.email.toLowerCase() || 
-                      loan.member.toLowerCase() === user?.name.toLowerCase();
-    
-    if (!isAdmin && !isOwnLoan) return false;
-    
+  const isPrivileged = user?.role === 'admin' || user?.role === 'librarian';
+  const isAdmin = user?.role === 'admin';
+  const memberEmailById = new Map(
+    members.map((member) => [member.id, member.email || ''])
+  );
+  const currentMember = members.find(
+    (member) => member.email?.toLowerCase() === user?.email?.toLowerCase()
+  );
+
+  const visibleLoans = isPrivileged
+    ? loans
+    : currentMember
+      ? loans.filter((loan) => loan.memberId === currentMember.id)
+      : [];
+
+  const filteredLoans = visibleLoans.filter((loan) => {
+    const memberEmail = memberEmailById.get(loan.memberId) || '';
     const matchesSearch = loan.book.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          loan.member.toLowerCase().includes(searchTerm.toLowerCase());
+                          loan.member.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (isAdmin && memberEmail.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesStatus = statusFilter === 'All' || loan.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -90,7 +102,12 @@ export default function Loans() {
                       <span className="text-sm font-medium text-gray-900">{loan.book}</span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-sm text-gray-600">{loan.member}</span>
+                      <div>
+                        <p className="text-sm text-gray-700">{loan.member}</p>
+                        {isAdmin && memberEmailById.get(loan.memberId) && (
+                          <p className="text-xs text-gray-500">{memberEmailById.get(loan.memberId)}</p>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-sm text-gray-600">{loan.loanDate}</span>

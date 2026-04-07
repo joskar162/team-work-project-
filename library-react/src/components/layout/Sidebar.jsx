@@ -11,10 +11,10 @@ import {
 import { useAuthStore } from '../../store/authStore';
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard, roles: ['admin', 'librarian', 'member'] },
+  { name: 'Dashboard', href: '/', icon: LayoutDashboard, roles: ['admin'] },
   { name: 'Books', href: '/books', icon: BookOpen, roles: ['admin', 'librarian', 'member'] },
   { name: 'Members', href: '/members', icon: Users, roles: ['admin', 'librarian'] },
-  { name: 'Loans', href: '/loans', icon: CalendarDays, roles: ['admin', 'librarian'] },
+  { name: 'Loans', href: '/loans', icon: CalendarDays, roles: ['admin', 'librarian', 'member'] },
   { name: 'Settings', href: '/settings', icon: Settings, roles: ['admin'] },
 ];
 

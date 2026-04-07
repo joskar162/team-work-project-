@@ -22,7 +22,14 @@ function App() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<Dashboard />} />
+          <Route
+            index
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
           <Route path="books" element={<Books />} />
           <Route
             path="books/new"
@@ -43,7 +50,7 @@ function App() {
           <Route
             path="loans"
             element={
-              <ProtectedRoute allowedRoles={['admin', 'librarian']}>
+              <ProtectedRoute allowedRoles={['admin', 'librarian', 'member']}>
                 <Loans />
               </ProtectedRoute>
             }

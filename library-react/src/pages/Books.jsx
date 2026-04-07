@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Search, Filter, MoreVertical, BookOpen } from 'lucide-react';
 import Header from '../components/layout/Header';
 import { useLibraryStore } from '../store/libraryStore';
+import { useAuthStore } from '../store/authStore';
+import toast from 'react-hot-toast';
 
 const categories = ['All', 'Fiction', 'Dystopian', 'Romance', 'Fantasy', 'Science', 'History'];
 
@@ -9,6 +11,23 @@ export default function Books() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const books = useLibraryStore((state) => state.books);
+  const borrowBook = useLibraryStore((state) => state.borrowBook);
+  const user = useAuthStore((state) => state.user);
+
+  const handleBorrowBook = (bookId) => {
+    if (!user) {
+      toast.error('You need to sign in to borrow a book');
+      return;
+    }
+
+    const result = borrowBook({ bookId, user });
+    if (!result.ok) {
+      toast.error(result.message);
+      return;
+    }
+
+    toast.success(result.message);
+  };
 
   const filteredBooks = books.filter(book => {
     const matchesSearch = book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -73,6 +92,18 @@ export default function Books() {
                     {book.status}
                   </span>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => handleBorrowBook(book.id)}
+                  disabled={book.status !== 'Available'}
+                  className={`mt-4 w-full rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    book.status === 'Available'
+                      ? 'bg-blue-600 text-white hover:bg-blue-700'
+                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  }`}
+                >
+                  {book.status === 'Available' ? 'Borrow Book' : 'Unavailable'}
+                </button>
                 <p className="text-xs text-gray-400 mt-3">{book.year}</p>
               </div>
             </div>

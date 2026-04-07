@@ -20,9 +20,22 @@ export default function Dashboard() {
   const loans = useLibraryStore((state) => state.loans);
   const currentUser = useAuthStore((state) => state.user);
 
-  const activeLoans = loans.filter((loan) => loan.status === 'Active').length;
-  const overdueLoans = loans.filter((loan) => loan.status === 'Overdue').length;
-  const returnedLoans = loans.filter((loan) => loan.status === 'Returned').length;
+  const isPrivileged = currentUser?.role === 'admin' || currentUser?.role === 'librarian';
+  const currentMember = members.find(
+    (member) => member.email?.toLowerCase() === currentUser?.email?.toLowerCase()
+  );
+  const memberEmailById = new Map(
+    members.map((member) => [member.id, member.email || ''])
+  );
+  const visibleLoans = isPrivileged
+    ? loans
+    : currentMember
+      ? loans.filter((loan) => loan.memberId === currentMember.id)
+      : [];
+
+  const activeLoans = visibleLoans.filter((loan) => loan.status === 'Active').length;
+  const overdueLoans = visibleLoans.filter((loan) => loan.status === 'Overdue').length;
+  const returnedLoans = visibleLoans.filter((loan) => loan.status === 'Returned').length;
 
   const stats = [
     { name: 'Total Books', value: String(books.length), change: '+', icon: BookOpen, color: 'bg-blue-500' },
@@ -31,10 +44,11 @@ export default function Dashboard() {
     { name: 'Returns Logged', value: String(returnedLoans), change: '+', icon: TrendingUp, color: 'bg-purple-500' },
   ];
 
-  const recentLoans = loans.slice(0, 5).map((loan) => ({
+  const recentLoans = visibleLoans.slice(0, 5).map((loan) => ({
     id: loan.id,
     book: loan.book,
     member: loan.member,
+    memberEmail: memberEmailById.get(loan.memberId) || '',
     date: loan.loanDate,
     status: loan.status,
   }));
@@ -44,7 +58,6 @@ export default function Dashboard() {
     .sort((a, b) => b.risk.score - a.risk.score)
     .slice(0, 3);
 
-  const currentMember = members.find((member) => member.email === currentUser?.email);
   const recommendations = currentMember ? recommendBooksForMember(currentMember, books, loans) : [];
 
   return (
@@ -155,7 +168,9 @@ export default function Dashboard() {
         {/* Recent Loans Table */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100">
-            <h3 className="text-lg font-semibold text-gray-900">Recent Loans</h3>
+            <h3 className="text-lg font-semibold text-gray-900">
+              {isPrivileged ? 'Recent Loans' : 'Your Recent Loans'}
+            </h3>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -171,7 +186,10 @@ export default function Dashboard() {
                 {recentLoans.map((loan) => (
                   <tr key={loan.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 text-sm font-medium text-gray-900">{loan.book}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{loan.member}</td>
+                    <td className="px-6 py-4">
+                      <p className="text-sm text-gray-700">{loan.member}</p>
+                      {loan.memberEmail && <p className="text-xs text-gray-500">{loan.memberEmail}</p>}
+                    </td>
                     <td className="px-6 py-4 text-sm text-gray-600">{loan.date}</td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
