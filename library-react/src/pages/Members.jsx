@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Search, Mail, MoreVertical, Plus } from 'lucide-react';
 import Header from '../components/layout/Header';
 import { useAuthStore } from '../store/authStore';
+import { useLibraryStore } from '../store/libraryStore';
 import toast from 'react-hot-toast';
 
 export default function Members() {
@@ -10,7 +11,11 @@ export default function Members() {
   const [newMember, setNewMember] = useState({ name: '', email: '', password: '', role: 'member' });
   const addUser = useAuthStore((state) => state.addUser);
   const getUsers = useAuthStore((state) => state.getUsers);
+  const members = useLibraryStore((state) => state.members);
   const [users, setUsers] = useState(getUsers());
+  const memberByEmail = new Map(
+    members.map((member) => [member.email?.toLowerCase(), member])
+  );
 
   const filteredMembers = users.filter(user =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -71,6 +76,7 @@ export default function Members() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {filteredMembers.map((user) => {
+                  const memberRecord = memberByEmail.get(user.email?.toLowerCase());
                   return (
                   <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4">
@@ -90,14 +96,18 @@ export default function Members() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-sm text-gray-500">-</span>
+                      <span className="text-sm text-gray-500">{memberRecord?.joinDate || '-'}</span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-sm text-gray-500">-</span>
+                      <span className="text-sm text-gray-500">{memberRecord?.booksBorrowed ?? 0}</span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
-                        Active
+                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                        (memberRecord?.status || 'Active') === 'Active'
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-gray-100 text-gray-700'
+                      }`}>
+                        {memberRecord?.status || 'Active'}
                       </span>
                     </td>
                     <td className="px-6 py-4">
