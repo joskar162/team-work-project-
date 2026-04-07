@@ -1,16 +1,53 @@
-# React + Vite
+# Library React App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend application for the Team Work Project Library Management System.
 
-Currently, two official plugins are available:
+## Quick Start
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install
+npm run dev
+```
 
-## React Compiler
+App runs with Vite and supports hot reload.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Available Scripts
 
-## Expanding the ESLint configuration
+- npm run dev: start dev server
+- npm run build: create production build
+- npm run preview: preview production build
+- npm run lint: run ESLint
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Main Functional Areas
+
+- Login and OTP verification
+- Books catalog and borrow workflow
+- Member management
+- Loans tracking and returns
+- Admin dashboard and settings
+
+## Important Business Constraints
+
+- Dashboard is admin-only
+- AI recommendations are member-only
+- Book borrowing requires admin approval tick per book
+- Member borrow limit is 2 active loans
+- Member must return current books before borrowing again
+- User emails must use library.com domain
+
+## State Management
+
+Zustand stores:
+
+- authStore: authentication, OTP, lockout, users
+- libraryStore: books, members, loans, borrow and return actions
+
+Both stores use persisted localStorage state with migration support.
+
+## Related Documentation
+
+For full project documentation (roles, workflow, security, setup from root), see:
+
+- ../README.md
+- ../docs/TECHNICAL_DOCUMENTATION.md
+- ../docs/USER_DOCUMENTATION.md
