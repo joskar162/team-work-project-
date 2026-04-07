@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Search, RefreshCw, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import Header from '../components/layout/Header';
 import { useLibraryStore } from '../store/libraryStore';
+import { useAuthStore } from '../store/authStore';
 
 const statusFilters = ['All', 'Active', 'Overdue', 'Returned'];
 
@@ -10,8 +11,15 @@ export default function Loans() {
   const [statusFilter, setStatusFilter] = useState('All');
   const loans = useLibraryStore((state) => state.loans);
   const returnBook = useLibraryStore((state) => state.returnBook);
+  const user = useAuthStore((state) => state.user);
 
   const filteredLoans = loans.filter(loan => {
+    const isAdmin = user?.role === 'admin' || user?.role === 'librarian';
+    const isOwnLoan = loan.member.toLowerCase() === user?.email.toLowerCase() || 
+                      loan.member.toLowerCase() === user?.name.toLowerCase();
+    
+    if (!isAdmin && !isOwnLoan) return false;
+    
     const matchesSearch = loan.book.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           loan.member.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'All' || loan.status === statusFilter;
@@ -114,7 +122,7 @@ export default function Loans() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      {loan.status !== 'Returned' && (
+                      {loan.status !== 'Returned' && (user?.role === 'admin' || user?.role === 'librarian') && (
                         <button
                           className="flex items-center gap-1 px-3 py-1 text-sm text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
                           onClick={() => returnBook(loan.id)}

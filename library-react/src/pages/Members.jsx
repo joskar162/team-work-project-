@@ -1,22 +1,20 @@
 import { useState } from 'react';
-import { Search, Mail, Calendar, MoreVertical, Plus } from 'lucide-react';
+import { Search, Mail, MoreVertical, Plus } from 'lucide-react';
 import Header from '../components/layout/Header';
-import { useLibraryStore } from '../store/libraryStore';
 import { useAuthStore } from '../store/authStore';
-import { predictOverdueRisk } from '../utils/ai';
 import toast from 'react-hot-toast';
 
 export default function Members() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [newMember, setNewMember] = useState({ name: '', email: '', password: '', role: 'member' });
-  const members = useLibraryStore((state) => state.members);
-  const loans = useLibraryStore((state) => state.loans);
   const addUser = useAuthStore((state) => state.addUser);
+  const getUsers = useAuthStore((state) => state.getUsers);
+  const [users, setUsers] = useState(getUsers());
 
-  const filteredMembers = members.filter(member =>
-    member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    member.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredMembers = users.filter(user =>
+    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleAddMember = (e) => {
@@ -26,6 +24,7 @@ export default function Members() {
       toast.success('Member added successfully');
       setShowAddModal(false);
       setNewMember({ name: '', email: '', password: '', role: 'member' });
+      setUsers(getUsers());
     } else {
       toast.error(result.message);
     }
@@ -71,46 +70,34 @@ export default function Members() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {filteredMembers.map((member) => {
-                  const risk = predictOverdueRisk(member, loans);
-
+                {filteredMembers.map((user) => {
                   return (
-                  <tr key={member.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
                           <span className="text-sm font-medium text-primary-600">
-                            {member.name.split(' ').map(n => n[0]).join('')}
+                            {user.name.split(' ').map(n => n[0]).join('')}
                           </span>
                         </div>
-                        <span className="text-sm font-medium text-gray-900">{member.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <Mail className="w-4 h-4" />
-                          {member.email}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          Risk: <span className="font-medium">{risk.level}</span> ({risk.score}%)
-                        </div>
+                        <span className="text-sm font-medium text-gray-900">{user.name}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Calendar className="w-4 h-4" />
-                        {member.joinDate}
+                        <Mail className="w-4 h-4" />
+                        {user.email}
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-sm font-medium text-gray-900">{member.booksBorrowed}</span>
+                      <span className="text-sm text-gray-500">-</span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                        member.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
-                      }`}>
-                        {member.status}
+                      <span className="text-sm text-gray-500">-</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
+                        Active
                       </span>
                     </td>
                     <td className="px-6 py-4">

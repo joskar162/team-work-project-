@@ -1,0 +1,10 @@
+{
+  "name": "team-work-project",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix library-react run dev -- --host",
+    "build": "npm --prefix library-react run build",
+    "preview": "npm --prefix library-react run preview -- --host",
+    "install:app": "npm --prefix library-react install"
+  }
+}

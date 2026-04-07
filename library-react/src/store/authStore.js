@@ -5,7 +5,9 @@ function generateOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-const storedUsers = JSON.parse(localStorage.getItem('library-users') || 'null');
+const USERS_KEY = 'library-users';
+
+const storedUsers = JSON.parse(localStorage.getItem(USERS_KEY) || 'null');
 const demoUsers = storedUsers || [
   { id: 1, name: 'Admin User', email: 'admin@library.com', password: 'Admin123!', role: 'admin' },
   { id: 2, name: 'Librarian User', email: 'librarian@library.com', password: 'Lib12345!', role: 'librarian' },
@@ -13,39 +15,48 @@ const demoUsers = storedUsers || [
 ];
 
 if (!storedUsers) {
-  localStorage.setItem('library-users', JSON.stringify(demoUsers));
+  localStorage.setItem(USERS_KEY, JSON.stringify(demoUsers));
 }
 
 export const useAuthStore = create(
   persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
       token: null,
       pendingEmail: null,
       otpSent: false,
       otpVerified: false,
       registeredUsers: demoUsers,
+      getUsers: () => {
+        const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+        return users;
+      },
       addUser: (userData) => {
-        const users = get().registeredUsers;
+        const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
         const exists = users.find(u => u.email.toLowerCase() === userData.email.toLowerCase());
         if (exists) {
           return { ok: false, message: 'User already exists' };
         }
         const newUser = { ...userData, id: Date.now() };
         const updatedUsers = [...users, newUser];
-        localStorage.setItem('library-users', JSON.stringify(updatedUsers));
+        localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
         set({ registeredUsers: updatedUsers });
         return { ok: true, user: newUser };
       },
       sendOTP: (email) => {
-        const users = get().registeredUsers;
+        const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
         const found = users.find(u => u.email.toLowerCase() === email.toLowerCase());
         if (!found) {
           return { ok: false, message: 'User not found' };
         }
         const otp = generateOTP();
         localStorage.setItem(`otp-${email}`, otp);
+        
+        if (typeof window !== 'undefined') {
+          window.alert(`OTP for ${email}: ${otp}`);
+        }
         console.log(`OTP for ${email}: ${otp}`);
+        
         set({ pendingEmail: email, otpSent: true, otpVerified: false });
         return { ok: true, message: `OTP sent to ${email}`, otp };
       },
@@ -54,7 +65,7 @@ export const useAuthStore = create(
         if (storedOTP !== otp) {
           return { ok: false, message: 'Invalid OTP' };
         }
-        const users = get().registeredUsers;
+        const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
         const found = users.find(u => u.email.toLowerCase() === email.toLowerCase());
         const safeUser = {
           id: found.id,
@@ -67,9 +78,9 @@ export const useAuthStore = create(
         return { ok: true, user: safeUser };
       },
       login: ({ email, password }) => {
-        const users = get().registeredUsers;
+        const users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
         const found = users.find(
-          (demoUser) => demoUser.email.toLowerCase() === email.toLowerCase() && demoUser.password === password
+          (user) => user.email.toLowerCase() === email.toLowerCase() && user.password === password
         );
 
         if (!found) {
@@ -91,7 +102,7 @@ export const useAuthStore = create(
     }),
     {
       name: 'library-auth-store',
-      partialize: (state) => ({ user: state.user, token: state.token, registeredUsers: state.registeredUsers }),
+      partialize: (state) => ({ user: state.user, token: state.token }),
     }
   )
 );
