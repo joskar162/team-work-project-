@@ -4,6 +4,7 @@ import { seedBooks, seedLoans, seedMembers } from '../utils/mockData';
 
 const DEMO_MEMBER_EMAIL = 'member@library.com';
 const REQUIRED_EMAIL_DOMAIN = 'library.com';
+const MAX_ACTIVE_MEMBER_LOANS = 2;
 
 function nextId(items) {
   return items.length ? Math.max(...items.map((item) => item.id)) + 1 : 1;
@@ -172,6 +173,18 @@ export const useLibraryStore = create(
               preferredCategory: targetBook.category,
             };
             members.push(member);
+          }
+
+          const activeLoansCount = state.loans.filter(
+            (loan) => loan.memberId === member.id && loan.status !== 'Returned'
+          ).length;
+
+          if (user?.role === 'member' && activeLoansCount >= MAX_ACTIVE_MEMBER_LOANS) {
+            result = {
+              ok: false,
+              message: 'Borrow limit reached. Return your 2 borrowed books before borrowing again.',
+            };
+            return state;
           }
 
           const dates = createLoanDates(14);

@@ -20,6 +20,10 @@ export default function Books() {
   const currentMember = members.find(
     (member) => member.email?.toLowerCase() === user?.email?.toLowerCase()
   );
+  const activeMemberLoans = currentMember
+    ? loans.filter((loan) => loan.memberId === currentMember.id && loan.status !== 'Returned').length
+    : 0;
+  const hasReachedBorrowLimit = isMember && activeMemberLoans >= 2;
   const recommendations = isMember && currentMember
     ? recommendBooksForMember(currentMember, books, loans)
     : [];
@@ -83,6 +87,10 @@ export default function Books() {
         {isMember && (
           <div className="mb-6 rounded-xl border border-blue-100 bg-blue-50 p-5">
             <h3 className="text-lg font-semibold text-blue-900 mb-3">AI Book Recommendations</h3>
+            <p className="text-xs text-blue-700 mb-3">
+              Borrowed now: {activeMemberLoans}/2
+              {hasReachedBorrowLimit ? ' - Return your 2 books to borrow again.' : ''}
+            </p>
             {recommendations.length === 0 ? (
               <p className="text-sm text-blue-700">Borrow history is not enough yet for recommendations.</p>
             ) : (
@@ -123,14 +131,18 @@ export default function Books() {
                 <button
                   type="button"
                   onClick={() => handleBorrowBook(book.id)}
-                  disabled={book.status !== 'Available'}
+                  disabled={book.status !== 'Available' || hasReachedBorrowLimit}
                   className={`mt-4 w-full rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                    book.status === 'Available'
+                    book.status === 'Available' && !hasReachedBorrowLimit
                       ? 'bg-blue-600 text-white hover:bg-blue-700'
                       : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                   }`}
                 >
-                  {book.status === 'Available' ? 'Borrow Book' : 'Unavailable'}
+                  {book.status !== 'Available'
+                    ? 'Unavailable'
+                    : hasReachedBorrowLimit
+                      ? 'Limit Reached (2/2)'
+                      : 'Borrow Book'}
                 </button>
                 <p className="text-xs text-gray-400 mt-3">{book.year}</p>
               </div>
