@@ -4,6 +4,7 @@ import Header from '../components/layout/Header';
 import { useLibraryStore } from '../store/libraryStore';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
+import { recommendBooksForMember } from '../utils/ai';
 
 const categories = ['All', 'Fiction', 'Dystopian', 'Romance', 'Fantasy', 'Science', 'History'];
 
@@ -11,8 +12,17 @@ export default function Books() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const books = useLibraryStore((state) => state.books);
+  const members = useLibraryStore((state) => state.members);
+  const loans = useLibraryStore((state) => state.loans);
   const borrowBook = useLibraryStore((state) => state.borrowBook);
   const user = useAuthStore((state) => state.user);
+  const isMember = user?.role === 'member';
+  const currentMember = members.find(
+    (member) => member.email?.toLowerCase() === user?.email?.toLowerCase()
+  );
+  const recommendations = isMember && currentMember
+    ? recommendBooksForMember(currentMember, books, loans)
+    : [];
 
   const handleBorrowBook = (bookId) => {
     if (!user) {
@@ -70,6 +80,24 @@ export default function Books() {
         </div>
 
         {/* Books Grid */}
+        {isMember && (
+          <div className="mb-6 rounded-xl border border-blue-100 bg-blue-50 p-5">
+            <h3 className="text-lg font-semibold text-blue-900 mb-3">AI Book Recommendations</h3>
+            {recommendations.length === 0 ? (
+              <p className="text-sm text-blue-700">Borrow history is not enough yet for recommendations.</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {recommendations.map((book) => (
+                  <div key={book.id} className="rounded-lg bg-white border border-blue-100 px-3 py-2">
+                    <p className="text-sm font-medium text-gray-900">{book.title}</p>
+                    <p className="text-xs text-gray-600">{book.author} - {book.category}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredBooks.map((book) => (
             <div key={book.id} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow">

@@ -3,7 +3,7 @@ import Header from '../components/layout/Header';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { useLibraryStore } from '../store/libraryStore';
 import { useAuthStore } from '../store/authStore';
-import { predictOverdueRisk, recommendBooksForMember } from '../utils/ai';
+import { predictOverdueRisk } from '../utils/ai';
 
 const monthlyData = [
   { month: 'Jan', loans: 120, returns: 95 },
@@ -57,8 +57,6 @@ export default function Dashboard() {
     .map((member) => ({ member, risk: predictOverdueRisk(member, loans) }))
     .sort((a, b) => b.risk.score - a.risk.score)
     .slice(0, 3);
-
-  const recommendations = currentMember ? recommendBooksForMember(currentMember, books, loans) : [];
 
   return (
     <>
@@ -130,7 +128,7 @@ export default function Dashboard() {
         </div>
 
         {/* AI Insights */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 gap-6 mb-8">
           <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">AI Risk Watch</h3>
             <div className="space-y-3">
@@ -146,22 +144,6 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">AI Book Recommendations</h3>
-            {recommendations.length === 0 ? (
-              <p className="text-sm text-gray-500">Sign in as a member to get personalized recommendations.</p>
-            ) : (
-              <div className="space-y-3">
-                {recommendations.map((book) => (
-                  <div key={book.id} className="rounded-lg bg-blue-50 px-3 py-2">
-                    <p className="text-sm font-medium text-gray-900">{book.title}</p>
-                    <p className="text-xs text-gray-600">{book.author} • {book.category}</p>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </div>
 
