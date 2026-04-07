@@ -10,11 +10,11 @@ export const seedBooks = [
 ];
 
 export const seedMembers = [
-  { id: 1, name: 'John Smith', email: 'john.smith@email.com', role: 'member', joinDate: '2023-01-15', status: 'Active', booksBorrowed: 12, preferredCategory: 'Fiction' },
-  { id: 2, name: 'Sarah Johnson', email: 'sarah.j@email.com', role: 'member', joinDate: '2023-02-20', status: 'Active', booksBorrowed: 8, preferredCategory: 'Dystopian' },
-  { id: 3, name: 'Mike Davis', email: 'mike.davis@email.com', role: 'member', joinDate: '2023-03-10', status: 'Inactive', booksBorrowed: 3, preferredCategory: 'Fiction' },
-  { id: 4, name: 'Emily Brown', email: 'emily.b@email.com', role: 'member', joinDate: '2023-04-05', status: 'Active', booksBorrowed: 15, preferredCategory: 'Romance' },
-  { id: 5, name: 'Alex Wilson', email: 'alex.w@email.com', role: 'member', joinDate: '2023-05-12', status: 'Active', booksBorrowed: 6, preferredCategory: 'Fantasy' },
+  { id: 1, name: 'John Smith', email: 'john.smith@library.com', role: 'member', joinDate: '2023-01-15', status: 'Active', booksBorrowed: 12, preferredCategory: 'Fiction' },
+  { id: 2, name: 'Sarah Johnson', email: 'sarah.j@library.com', role: 'member', joinDate: '2023-02-20', status: 'Active', booksBorrowed: 8, preferredCategory: 'Dystopian' },
+  { id: 3, name: 'Mike Davis', email: 'mike.davis@library.com', role: 'member', joinDate: '2023-03-10', status: 'Inactive', booksBorrowed: 3, preferredCategory: 'Fiction' },
+  { id: 4, name: 'Emily Brown', email: 'emily.b@library.com', role: 'member', joinDate: '2023-04-05', status: 'Active', booksBorrowed: 15, preferredCategory: 'Romance' },
+  { id: 5, name: 'Alex Wilson', email: 'alex.w@library.com', role: 'member', joinDate: '2023-05-12', status: 'Active', booksBorrowed: 6, preferredCategory: 'Fantasy' },
 ];
 
 export const seedLoans = [

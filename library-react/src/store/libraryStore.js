@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { seedBooks, seedLoans, seedMembers } from '../utils/mockData';
 
 const DEMO_MEMBER_EMAIL = 'member@library.com';
+const REQUIRED_EMAIL_DOMAIN = 'library.com';
 
 function nextId(items) {
   return items.length ? Math.max(...items.map((item) => item.id)) + 1 : 1;
@@ -24,8 +25,40 @@ function createLoanDates(days = 14) {
   };
 }
 
+function buildLibraryEmail(value, fallback) {
+  const raw = String(value || '').trim().toLowerCase();
+  const localPart = raw.includes('@') ? raw.split('@')[0] : raw;
+  const cleaned = localPart.replace(/[^a-z0-9._-]/g, '') || fallback;
+  return `${cleaned}@${REQUIRED_EMAIL_DOMAIN}`;
+}
+
+function normalizeMembersEmails(members) {
+  const taken = new Set();
+
+  return members.map((member) => {
+    const fallback = String(member.name || `member${member.id || Date.now()}`)
+      .toLowerCase()
+      .replace(/\s+/g, '.');
+
+    const preferred = buildLibraryEmail(member.email, fallback);
+    const [baseLocal] = preferred.split('@');
+    let local = baseLocal;
+    let suffix = 1;
+
+    while (taken.has(`${local}@${REQUIRED_EMAIL_DOMAIN}`)) {
+      local = `${baseLocal}${suffix}`;
+      suffix += 1;
+    }
+
+    const normalizedEmail = `${local}@${REQUIRED_EMAIL_DOMAIN}`;
+    taken.add(normalizedEmail);
+
+    return { ...member, email: normalizedEmail };
+  });
+}
+
 function normalizeLibraryData(data) {
-  const members = Array.isArray(data.members) ? data.members : [];
+  const members = normalizeMembersEmails(Array.isArray(data.members) ? data.members : []);
   const loans = Array.isArray(data.loans) ? data.loans : [];
 
   let normalizedMembers = members;
@@ -174,7 +207,7 @@ export const useLibraryStore = create(
     }),
     {
       name: 'library-data-store',
-      version: 1,
+      version: 2,
       migrate: (persistedState) => normalizeLibraryData(persistedState || {}),
     }
   )
