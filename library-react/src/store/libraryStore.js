@@ -58,7 +58,15 @@ function normalizeMembersEmails(members) {
   });
 }
 
+function normalizeBooksForBorrowAccess(books) {
+  return books.map((book) => ({
+    ...book,
+    borrowApproved: Boolean(book.borrowApproved),
+  }));
+}
+
 function normalizeLibraryData(data) {
+  const books = normalizeBooksForBorrowAccess(Array.isArray(data.books) ? data.books : []);
   const members = normalizeMembersEmails(Array.isArray(data.members) ? data.members : []);
   const loans = Array.isArray(data.loans) ? data.loans : [];
 
@@ -102,6 +110,7 @@ function normalizeLibraryData(data) {
 
   return {
     ...data,
+    books,
     members: normalizedMembers,
     loans: normalizedLoans,
   };
@@ -121,7 +130,16 @@ export const useLibraryStore = create(
       loans: normalizedSeedData.loans,
       addBook: (book) =>
         set((state) => ({
-          books: [...state.books, { ...book, id: nextId(state.books), status: 'Available' }],
+          books: [
+            ...state.books,
+            { ...book, id: nextId(state.books), status: 'Available', borrowApproved: false },
+          ],
+        })),
+      toggleBorrowApproval: (bookId, approved) =>
+        set((state) => ({
+          books: state.books.map((book) =>
+            book.id === bookId ? { ...book, borrowApproved: approved } : book
+          ),
         })),
       returnBook: (loanId) =>
         set((state) => {
@@ -153,6 +171,14 @@ export const useLibraryStore = create(
 
           if (targetBook.status !== 'Available') {
             result = { ok: false, message: 'Book is not available' };
+            return state;
+          }
+
+          if (!targetBook.borrowApproved) {
+            result = {
+              ok: false,
+              message: 'This book is not approved for borrowing yet. Ask admin to enable it.',
+            };
             return state;
           }
 
@@ -220,7 +246,7 @@ export const useLibraryStore = create(
     }),
     {
       name: 'library-data-store',
-      version: 2,
+      version: 3,
       migrate: (persistedState) => normalizeLibraryData(persistedState || {}),
     }
   )

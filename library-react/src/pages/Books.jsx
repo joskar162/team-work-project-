@@ -15,8 +15,10 @@ export default function Books() {
   const members = useLibraryStore((state) => state.members);
   const loans = useLibraryStore((state) => state.loans);
   const borrowBook = useLibraryStore((state) => state.borrowBook);
+  const toggleBorrowApproval = useLibraryStore((state) => state.toggleBorrowApproval);
   const user = useAuthStore((state) => state.user);
   const isMember = user?.role === 'member';
+  const isAdmin = user?.role === 'admin';
   const currentMember = members.find(
     (member) => member.email?.toLowerCase() === user?.email?.toLowerCase()
   );
@@ -128,12 +130,28 @@ export default function Books() {
                     {book.status}
                   </span>
                 </div>
+                {isAdmin && (
+                  <label className="mt-3 flex items-center gap-2 text-xs text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(book.borrowApproved)}
+                      onChange={(e) => toggleBorrowApproval(book.id, e.target.checked)}
+                      className="rounded border-gray-300"
+                    />
+                    Allow Borrow (Admin Tick)
+                  </label>
+                )}
+                {!isAdmin && (
+                  <p className={`mt-3 text-xs ${book.borrowApproved ? 'text-green-700' : 'text-amber-700'}`}>
+                    {book.borrowApproved ? 'Borrow approved by admin' : 'Waiting admin approval'}
+                  </p>
+                )}
                 <button
                   type="button"
                   onClick={() => handleBorrowBook(book.id)}
-                  disabled={book.status !== 'Available' || hasReachedBorrowLimit}
+                  disabled={book.status !== 'Available' || hasReachedBorrowLimit || !book.borrowApproved}
                   className={`mt-4 w-full rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                    book.status === 'Available' && !hasReachedBorrowLimit
+                    book.status === 'Available' && !hasReachedBorrowLimit && book.borrowApproved
                       ? 'bg-blue-600 text-white hover:bg-blue-700'
                       : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                   }`}
@@ -142,6 +160,8 @@ export default function Books() {
                     ? 'Unavailable'
                     : hasReachedBorrowLimit
                       ? 'Limit Reached (2/2)'
+                      : !book.borrowApproved
+                        ? 'Pending Admin Tick'
                       : 'Borrow Book'}
                 </button>
                 <p className="text-xs text-gray-400 mt-3">{book.year}</p>
