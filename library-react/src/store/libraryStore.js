@@ -169,6 +169,11 @@ export const useLibraryStore = create(
             return state;
           }
 
+          if (user?.role === 'admin') {
+            result = { ok: false, message: 'Admins cannot borrow books' };
+            return state;
+          }
+
           if (targetBook.status !== 'Available') {
             result = { ok: false, message: 'Book is not available' };
             return state;
