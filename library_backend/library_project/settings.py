@@ -73,10 +73,17 @@ WSGI_APPLICATION = 'library_project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+import os
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'djongo',
+        'NAME': 'library_db',
+        'CLIENT': {
+            'host': os.environ.get('MONGO_HOST', 'localhost'),
+            'port': int(os.environ.get('MONGO_PORT', 27017)),
+            'db': 'library_db',
+        }
     }
 }
 
